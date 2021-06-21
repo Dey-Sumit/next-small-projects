@@ -1,4 +1,4 @@
-const users = [
+const mentions = [
   {
     name: "Matthew Russell",
     link: "https://twitter.com/mrussell247",
@@ -33,4 +33,16 @@ const users = [
   },
 ];
 
-export default users;
+const hashtags = [
+  {
+    name: "general",
+  },
+  {
+    name: "random",
+  },
+  {
+    name: "signal",
+  },
+];
+
+export default { "@": mentions, "#": hashtags };

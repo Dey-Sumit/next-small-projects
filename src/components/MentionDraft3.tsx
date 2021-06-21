@@ -1,48 +1,45 @@
-import React, {
-  ReactElement,
-  useRef,
-  useState,
-  useCallback,
-  useMemo,
-} from "react";
+import React, { ReactElement, useRef, useState, useCallback } from "react";
 import { EditorState, ContentState, convertToRaw } from "draft-js";
 import Editor from "@draft-js-plugins/editor";
 import createMentionPlugin, {
   defaultSuggestionsFilter,
   MentionData,
 } from "@draft-js-plugins/mention";
-import mentions from "../../data/users";
 import "@draft-js-plugins/mention/lib/plugin.css";
+
+import mentions from "../../data/data";
+
+const mentionPlugin = createMentionPlugin({ mentionTrigger: ["@", "("] });
+const { MentionSuggestions } = mentionPlugin;
+const plugins = [mentionPlugin];
 
 const SimpleMentionEditor = (): ReactElement => {
   const ref = useRef<Editor>(null);
-  const [editorState, setEditorState] = useState(() =>
-    EditorState.createEmpty()
+  const [editorState, setEditorState] = useState(
+    EditorState.createWithContent(ContentState.createFromText("hi"))
   );
 
   const [open, setOpen] = useState(false);
-  const [suggestions, setSuggestions] = useState<MentionData[]>(mentions);
-  const { MentionSuggestions, plugins } = useMemo(() => {
-    const mentionPlugin = createMentionPlugin();
-    // eslint-disable-next-line no-shadow
-    const { MentionSuggestions } = mentionPlugin;
-    // eslint-disable-next-line no-shadow
-    const plugins = [mentionPlugin];
-    return { plugins, MentionSuggestions };
-  }, []);
+  const [suggestions, setSuggestions] = useState(mentions["@"]);
 
-  const onChange = useCallback((_editorState: EditorState) => {
-    setEditorState(_editorState);
-  }, []);
+  const onChange = (value): void => {
+    setEditorState(value);
+  };
 
   const onOpenChange = useCallback((_open: boolean) => {
     setOpen(_open);
   }, []);
+  const onSearchChange = useCallback(
+    ({ trigger, value }: { trigger: string; value: string }) => {
+      //@ts-ignore
+      setSuggestions(defaultSuggestionsFilter(value, mentions, trigger));
+    },
+    []
+  );
 
-  const onSearchChange = useCallback(({ value }: { value: string }) => {
-    setSuggestions(defaultSuggestionsFilter(value, mentions));
-  }, []);
-
+  const onAddMention = (): void => {
+    // get the mention object selected
+  };
   const handleExtractMentions = () => {
     const contentState = editorState.getCurrentContent();
     const raw = convertToRaw(contentState);
@@ -56,13 +53,11 @@ const SimpleMentionEditor = (): ReactElement => {
     const value = blocks
       .map((block) => (!block.text.trim() && "\n") || block.text)
       .join("\n");
-    blocks.map((block) => console.log(block));
-
     console.log({ value });
   };
 
   return (
-    <div>
+    <>
       <div
         className="editor"
         onClick={() => {
@@ -71,19 +66,17 @@ const SimpleMentionEditor = (): ReactElement => {
       >
         <Editor
           editorState={editorState}
-          onChange={setEditorState}
+          onChange={onChange}
           plugins={plugins}
           ref={ref}
-          editorKey="editor"
+          placeholder="Hey! What's up?"
         />
         <MentionSuggestions
           open={open}
           onOpenChange={onOpenChange}
           onSearchChange={onSearchChange}
           suggestions={suggestions}
-          onAddMention={() => {
-            // get the mention object selected
-          }}
+          onAddMention={onAddMention}
         />
       </div>
       <div className="flex space-x-5 text-white">
@@ -94,8 +87,8 @@ const SimpleMentionEditor = (): ReactElement => {
           Extract Data
         </button>
         <button
-          onClick={handleExtractMentions}
           className="p-2 bg-gray-600 rounded-md"
+          onClick={handleExtractMentions}
         >
           Extract Mentions
         </button>
@@ -103,7 +96,7 @@ const SimpleMentionEditor = (): ReactElement => {
           Extract Hashtags
         </button>
       </div>
-    </div>
+    </>
   );
 };
 
